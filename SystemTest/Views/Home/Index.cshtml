@@ -1,0 +1,206 @@
+﻿<html>
+<head>
+    <script src="~/Scripts/vue_v2612.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vue-resource@1.5.1"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+    <link href="~/Content/App.css" rel="stylesheet" />
+</head>
+<body>
+    <div id="app">
+        <div id="screen1">
+            <div id="header">
+                Quote
+            </div>
+            <div id="Content">
+                <div>
+                    <span class="label1">Quote:</span><span class="spText">{{Quotes.Number}}</span>
+                    <span class="label1">Status:</span>
+                    <span>
+                        <select v-model="Status">
+                            <option v-for="item in StatusList">{{item}}</option>
+                        </select>
+                    </span>
+                    <span class="label1" style="padding-left:200px">Applicant:</span><span class="">{{Quotes.Applicant}}</span>
+                </div>
+                <div>
+                    <span class="label2">Quote Date:</span><span class="spText2">{{Quotes.Date}}</span>
+                    <span class="label2">Effective Date:</span><span class="spText2">{{Quotes.EffectiveDate}}</span>
+                    <span style="padding-left:100px">
+                        <input type="radio" name="PreferredOption" value="Basic" v-model="Quotes.Basic" />
+                    </span>
+                    Basic: <span class="quotefont">{{Quotes.Basic}}</span>
+                    <span><input type="radio" name="PreferredOption" value="Preffered" v-model="Quotes.Preffered" /></span>
+                    Preffered:<span class="quotefont">{{Quotes.Preffered}}</span>
+                    <span><input type="radio" name="PreferredOption" value="Premier" v-model="Quotes.Premier" /></span>
+                    Premier:<span class="quotefont">{{Quotes.Premier}}</span>
+
+
+                </div>
+
+            </div>
+
+        </div>
+        <br />
+        <div id="screen2">
+            <div id="uheader">
+                Search
+            </div>
+            <div class="uContent" style=" display: inline-flex;">
+                <div class="dselement">
+                    <label for="fname">First Name</label>
+                    <input type="text" v-model="FName">
+                </div>
+                <div class="dselement">
+                    <label for="fname">Last Name</label>
+                    <input type="text" v-model="LName">
+                </div>
+                <div class="dselement" style="padding-top:40px;padding-right:0">
+                    <button class="button" style="float:right" v-on:click="getSearchResults">Search</button>
+
+                </div>
+            </div>
+            <div> <span v-if="iserror" class="error">* search criteria should not be empty.</span> </div>
+            <div class="uContent">
+                <table>
+                    <tr>
+                        <th>Name</th>
+                        <th>DOB</th>
+                        <th>Add to Quote</th>
+                    </tr>
+                    <tr v-for="item in Users">
+                        <td>{{item.FName}}, {{item.LName}}</td>
+                        <td>{{item.DOB}}</td>
+                        <td><button id="show-modal" class="button" v-on:click="selectedUser(item.UserId)">Select</button></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+        <div>
+            <div v-if="showModal">
+                <transition name="modal">
+                    <div class="modal-mask">
+                        <div class="modal-wrapper">
+                            <div class="modal-dialog">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <button type="button" class="close" v-on:click="showModal=false">
+                                            <span aria-hidden="true">&times;</span>
+                                        </button>
+                                        <h4 class="modal-title">Additional Insured</h4>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div>
+                                            <label for="fname">First Name:</label>
+                                            <input type="text" v-model="modelObject.FName">
+                                        </div>
+                                        <div>
+                                            <label for="fname">Date Of Birth:</label>
+                                            <input type="text" v-model="modelObject.DOB">
+                                        </div>
+                                        <div>
+                                            <label for="fname">Coverage:</label>
+                                            <input type="text" v-model="modelObject.Coverage">
+                                        </div>
+
+                                    </div>
+                                    <div class="modal-footer">
+                                        <button type="button" class="btn btn-default" data-dismiss="modal" v-on:click="showModal=false">Close</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </transition>
+            </div>
+        </div>
+
+    </div>
+
+
+    <script>
+        var app = new Vue({
+            el: '#app',
+            data: {
+                showModal: false,
+                Quotes: {
+                    "Number": 'apz110',
+                    "Status": 'pending',
+                },
+                Status: "Pending",
+                StatusList: ["Pending", "Inprogress", "Completed"],
+                Users: [],
+                FName: "",
+                LName: "",
+                modelObject: {},
+                iserror: false
+
+            },
+            created () {
+                this.fetchQuoteData();
+                this.fetchUserData();
+            },
+            methods: {
+                fetchQuoteData() {
+                    this.$http.get('http://localhost:50473/api/Quote/GetQuoteById?id=apz110').then(response => {
+
+                        // get body data
+                        this.Quotes = response.body;
+                        console.log(this.Quotes);
+                    }, response => {
+                        // error callback
+                    });
+                },
+                fetchUserData() {
+                    this.$http.get('http://localhost:50473/api/User/GetUserList').then(response => {
+
+                        // get body data
+                        this.Users = response.body;
+                        console.log(response.body);
+                    }, response => {
+                        // error callback
+                    });
+                },
+                addUserToQuote(reqData) {
+                    this.$http.post('http://localhost:50473/api/Quote/addUserToQuote?id=' + this.Quotes.Number, reqData).then(response => {
+                        // get body data
+                        this.modelObject.Coverage = response.body;
+                        console.log(response.body);
+                    }, response => {
+                        // error callback
+                    });
+                },
+                selectedUser(UserId) {
+                    this.Users.forEach((value, index) => {
+                        if (value.UserId == UserId) {
+                            this.addUserToQuote(value);
+                            this.modelObject = value;
+                            console.log(value);
+                        }
+
+                    });
+                    this.showModal = true;
+
+                },
+                getSearchResults() {
+                    if (this.FName == "" && this.LName == "")
+                        this.iserror = true;
+                    else {
+                        this.$http.get('http://localhost:50473/api/User/getSearchResults?fName=' + this.FName + '&lName=' + this.LName).then(response => {
+                            this.iserror = false;
+                            // get body data
+                            this.Users = response.body;
+                            console.log(response.body);
+                        }, response => {
+                            // error callback
+                        });
+                    }
+                }
+            }
+        })
+
+    </script>
+
+</body>
+</html>
